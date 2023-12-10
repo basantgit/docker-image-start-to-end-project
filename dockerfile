@@ -1,5 +1,5 @@
 FROM nginx
-WORKDIR /app
+WORKDIR /root
 COPY . .
 RUN apt install nginx -y
 EXPOSE 80
