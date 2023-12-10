@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Pull the docker image') {
+            steps {
+                echo "pulling the image from github"
+                git branch: 'main', changelog: false, credentialsId: 'docker-crds', poll: false, url: 'https://github.com/basantgit/test.git'
+            }
+        }
+        
+        stage('Build the image') {
+            steps {
+                echo "Build the image from dockerfile"
+                sh "docker build ."
+            }
+        }
+        
+        stage('Run the image') {
+            steps {
+                echo "Deploy the image on ec2 instance"
+                sh "docker run -it -d -p 83:80 nginx"
+            }
+        }
+        
+        stage('Push the image to Docker Hub') {
+            steps {
+                echo "Pushing the image to docker hub"
+                withCredentials([usernamePassword(credentialsId:"docker-crds",passwordVariable:"dockerHubPass",usernameVariable:"dockerHubUser")]){
+                sh "docker tag nginx ${env.dockerHubUser}/nginx:latest"
+                sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
+                sh "docker push ${env.dockerHubUser}/nginx:latest"
+                }
+            }
+        }
+    }
+}
